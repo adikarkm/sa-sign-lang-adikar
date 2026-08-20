@@ -1,0 +1,6 @@
+to launch the sign lang model 
+anaconda prompt:
+1
+conda activate sign_env
+2
+jupyter notebook
