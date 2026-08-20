@@ -6,14 +6,15 @@
     <title>Sign Language Recognition - Web App</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 28, 45, 0.7);
             --accent-color: #10b981;
-            --accent-hover: #059669;
+            --accent-glow: rgba(16, 185, 129, 0.4);
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
-            --border-color: #334155;
+            --border-color: rgba(255, 255, 255, 0.08);
             --error-color: #ef4444;
+            --purple-glow: rgba(168, 85, 247, 0.4);
         }
 
         * {
@@ -25,72 +26,84 @@
 
         body {
             background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
         header {
-            background-color: var(--card-bg);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
-            padding: 1rem 2rem;
+            padding: 1.25rem 2rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
         header h1 {
-            font-size: 1.5rem;
-            color: var(--accent-color);
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .badge-free {
-            background-color: rgba(16, 185, 129, 0.2);
-            color: var(--accent-color);
-            padding: 0.25rem 0.75rem;
+            background-color: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            padding: 0.35rem 0.85rem;
             border-radius: 9999px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border: 1px solid var(--accent-color);
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
         }
 
         .container {
             max-width: 1200px;
             margin: 2rem auto;
-            padding: 0 1rem;
+            padding: 0 1.25rem;
             display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 1.5rem;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
             width: 100%;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 950px) {
             .container {
                 grid-template-columns: 1fr;
             }
         }
 
         .video-card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
             border: 1px solid var(--border-color);
-            padding: 1.25rem;
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.25rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
         .video-container {
             position: relative;
             width: 100%;
             aspect-ratio: 4 / 3;
-            background-color: #000;
-            border-radius: 8px;
+            background-color: #020617;
+            border-radius: 12px;
             overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
         }
 
         video, canvas {
@@ -113,6 +126,14 @@
 
         .controls {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-group {
+            display: flex;
             gap: 1rem;
         }
 
@@ -120,27 +141,70 @@
             background-color: var(--accent-color);
             color: #fff;
             border: none;
-            padding: 0.75rem 1.5rem;
+            padding: 0.8rem 1.6rem;
             border-radius: 8px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            box-shadow: 0 4px 14px var(--accent-glow);
         }
 
         .btn:hover {
             background-color: var(--accent-hover);
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background-color: var(--border-color);
-            color: var(--text-primary);
+            background-color: #334155;
+            box-shadow: none;
         }
 
         .btn-secondary:hover {
             background-color: #475569;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .toggle-input {
+            width: 40px;
+            height: 20px;
+            appearance: none;
+            background: #334155;
+            border-radius: 10px;
+            position: relative;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-input:checked {
+            background: var(--accent-color);
+        }
+
+        .toggle-input::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            background: #fff;
+            transition: transform 0.3s;
+        }
+
+        .toggle-input:checked::before {
+            transform: translateX(20px);
         }
 
         .sidebar {
@@ -150,45 +214,121 @@
         }
 
         .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
             border: 1px solid var(--border-color);
-            padding: 1.25rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
         .card h2 {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
             color: var(--text-secondary);
+            border-left: 3px solid var(--accent-color);
+            padding-left: 0.5rem;
         }
 
         .prediction-box {
             text-align: center;
-            padding: 1.5rem;
-            background-color: rgba(15, 23, 42, 0.6);
-            border-radius: 8px;
+            padding: 1.75rem;
+            background-color: rgba(15, 23, 42, 0.7);
+            border-radius: 12px;
             border: 1px solid var(--border-color);
             margin-bottom: 1rem;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .prediction-label {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--accent-color);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-primary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
         }
 
         .prediction-conf {
             font-size: 1rem;
             color: var(--text-secondary);
-            margin-top: 0.25rem;
+        }
+
+        /* Hand Type Badges */
+        .hand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+            border: 1px solid transparent;
+        }
+
+        .badge-none {
+            background-color: rgba(148, 163, 184, 0.1);
+            color: #94a3b8;
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        .badge-left {
+            background-color: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+        }
+
+        .badge-right {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-both {
+            background-color: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            border-color: rgba(168, 85, 247, 0.3);
+            box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
+        }
+
+        /* History log styling */
+        .history-box {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            min-height: 80px;
+            max-height: 150px;
+            overflow-y: auto;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .history-controls {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
         }
 
         .prob-list {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
         }
 
         .prob-item {
@@ -205,14 +345,14 @@
 
         .bar-bg {
             height: 8px;
-            background-color: var(--border-color);
+            background-color: #334155;
             border-radius: 4px;
             overflow: hidden;
         }
 
         .bar-fill {
             height: 100%;
-            background-color: var(--accent-color);
+            background: linear-gradient(90deg, #10b981 0%, #a855f7 100%);
             width: 0%;
             transition: width 0.15s ease-out;
         }
@@ -226,7 +366,7 @@
         .chip {
             background-color: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-color);
-            padding: 0.35rem 0.75rem;
+            padding: 0.4rem 0.8rem;
             border-radius: 6px;
             font-size: 0.85rem;
             color: var(--text-secondary);
@@ -278,12 +418,18 @@
                 </div>
             </div>
             <div class="controls">
-                <button id="toggleCamBtn" class="btn">
-                    📷 Start Camera
-                </button>
-                <button id="toggleLandmarksBtn" class="btn btn-secondary">
-                    👐 Hide Landmarks
-                </button>
+                <div class="btn-group">
+                    <button id="toggleCamBtn" class="btn">
+                        📷 Start Camera
+                    </button>
+                    <button id="toggleLandmarksBtn" class="btn btn-secondary">
+                        👐 Hide Landmarks
+                    </button>
+                </div>
+                <label class="toggle-switch">
+                    <span>🗣️ Text-to-Speech</span>
+                    <input type="checkbox" id="ttsToggle" class="toggle-input">
+                </label>
             </div>
         </div>
 
@@ -293,8 +439,24 @@
                 <div class="prediction-box">
                     <div id="predLabel" class="prediction-label">WAITING...</div>
                     <div id="predConf" class="prediction-conf">Start camera to detect signs</div>
+                    
+                    <!-- Hand Detection Type Badge -->
+                    <span id="handBadge" class="hand-badge badge-none">
+                        No Hand Detected
+                    </span>
                 </div>
 
+                <h2>Translation Sentence Builder</h2>
+                <div id="historyBox" class="history-box">
+                    <em>Translated words will construct a sentence here...</em>
+                </div>
+                <div class="history-controls">
+                    <button id="copyBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">📋 Copy</button>
+                    <button id="clearBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background-color: rgba(239, 68, 68, 0.15); color: #f87171;">🗑️ Clear</button>
+                </div>
+            </div>
+
+            <div class="card">
                 <h2>Confidence Breakdown</h2>
                 <div class="prob-list" id="probList">
                     <!-- Progress bars injected via JS -->
@@ -329,6 +491,11 @@
         const errorOverlay = document.getElementById('errorOverlay');
         const predLabel = document.getElementById('predLabel');
         const predConf = document.getElementById('predConf');
+        const handBadge = document.getElementById('handBadge');
+        const historyBox = document.getElementById('historyBox');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const ttsToggle = document.getElementById('ttsToggle');
         const probList = document.getElementById('probList');
 
         const CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"];
@@ -344,9 +511,12 @@
         let frameCount = 0;
         let fpsTimer = performance.now();
 
-        // Smoothing Queue
+        // Smoothing Queue & History log
         const SMOOTHING_WINDOW_SIZE = 8;
         let predictionHistory = [];
+        let sentenceHistory = [];
+        let lastLoggedWord = "";
+        let stableWordCounter = 0;
 
         // Initialize Probability Bars
         function initBars() {
@@ -368,14 +538,13 @@
         }
         initBars();
 
-        // Auto-fit canvas when video metadata loads or plays
+        // Auto-fit canvas
         video.addEventListener('play', () => {
             canvas.width = video.videoWidth || 640;
             canvas.height = video.videoHeight || 480;
-            console.log(`Canvas dimensions initialized to: ${canvas.width}x${canvas.height}`);
         });
 
-        // Camera Toggle
+        // Toggle Cameras
         toggleCamBtn.addEventListener('click', async () => {
             if (isCameraActive) {
                 stopCamera();
@@ -384,10 +553,27 @@
             }
         });
 
-        // Toggle Landmarks skeleton display
+        // Toggle Landmarks
         toggleLandmarksBtn.addEventListener('click', () => {
             showLandmarks = !showLandmarks;
             toggleLandmarksBtn.textContent = showLandmarks ? "👐 Hide Landmarks" : "👐 Show Landmarks";
+        });
+
+        // Clear log
+        clearBtn.addEventListener('click', () => {
+            sentenceHistory = [];
+            lastLoggedWord = "";
+            stableWordCounter = 0;
+            historyBox.innerHTML = '<em>Translated words will construct a sentence here...</em>';
+        });
+
+        // Copy log
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = sentenceHistory.join(" ");
+            if (textToCopy) {
+                navigator.clipboard.writeText(textToCopy);
+                alert("Copied: " + textToCopy);
+            }
         });
 
         async function startCamera() {
@@ -406,7 +592,6 @@
                 toggleCamBtn.textContent = '⏹️ Stop Camera';
                 toggleCamBtn.classList.add('btn-secondary');
 
-                // Process frames every 120ms
                 frameInterval = setInterval(captureAndPredict, 120);
             } catch (err) {
                 console.error("Camera access error:", err);
@@ -428,6 +613,11 @@
             toggleCamBtn.classList.remove('btn-secondary');
             predLabel.textContent = 'STOPPED';
             predConf.textContent = 'Camera is inactive';
+            
+            // Reset Badge
+            handBadge.className = "hand-badge badge-none";
+            handBadge.textContent = "No Hand Detected";
+
             predictionHistory = [];
         }
 
@@ -443,7 +633,7 @@
 
             const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.6);
 
-            // FPS Calculation
+            // Calculate FPS
             const now = performance.now();
             frameCount++;
             if (now - fpsTimer >= 1000) {
@@ -471,11 +661,21 @@
             }
         }
 
+        // Web Speech synthesis speak
+        function speakWord(word) {
+            if (ttsToggle.checked && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // stop previous speech
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
         function updateUI(res) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw FPS Counter Overlay in top-right
-            ctx.fillStyle = "rgba(15, 23, 42, 0.7)";
+            // Draw FPS overlay
+            ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
             ctx.fillRect(canvas.width - 95, 10, 85, 30);
             ctx.font = "bold 13px Arial";
             ctx.fillStyle = "#10b981";
@@ -485,7 +685,7 @@
             ctx.fillText(`FPS: ${currentFps}`, 25, 30);
             ctx.restore();
 
-            // Draw Landmarks (if showLandmarks is toggled ON)
+            // Draw landmarks
             if (res.hand_detected && showLandmarks) {
                 ctx.fillStyle = '#10b981';
                 res.landmarks.forEach(hand => {
@@ -499,7 +699,24 @@
                 });
             }
 
-            // Prediction Smoothing (Rolling History queue)
+            // Update Handedness Badge (Left/Right/Both/None)
+            if (res.hand_detected && res.handedness && res.handedness.length > 0) {
+                if (res.handedness.length === 2) {
+                    handBadge.className = "hand-badge badge-both";
+                    handBadge.textContent = "👐 Both Hands";
+                } else if (res.handedness[0] === "Left") {
+                    handBadge.className = "hand-badge badge-left";
+                    handBadge.textContent = "👈 Left Hand";
+                } else {
+                    handBadge.className = "hand-badge badge-right";
+                    handBadge.textContent = "👉 Right Hand";
+                }
+            } else {
+                handBadge.className = "hand-badge badge-none";
+                handBadge.textContent = "No Hand Detected";
+            }
+
+            // Prediction Smoothing
             if (res.hand_detected) {
                 predictionHistory.push({ label: res.label, confidence: res.confidence });
             } else {
@@ -510,11 +727,9 @@
                 predictionHistory.shift();
             }
 
-            // Filter only valid hand predictions to calculate consensus
             const handPredictions = predictionHistory.filter(item => item.label !== 'NO HAND');
             
             if (res.hand_detected && handPredictions.length > 0) {
-                // Find mode label among recent hand detections
                 const frequencyMap = {};
                 handPredictions.forEach(item => {
                     frequencyMap[item.label] = (frequencyMap[item.label] || 0) + 1;
@@ -529,18 +744,36 @@
                     }
                 });
 
-                // Calculate average confidence for the mode label
                 const modePredictions = handPredictions.filter(item => item.label === modeLabel);
                 const avgConf = modePredictions.reduce((acc, curr) => acc + curr.confidence, 0) / modePredictions.length;
                 
                 predLabel.textContent = modeLabel.toUpperCase();
                 predConf.textContent = `Confidence: ${avgConf.toFixed(1)}%`;
+
+                // Sentence builder log handler
+                if (modeLabel === lastLoggedWord) {
+                    stableWordCounter++;
+                    // If a word is held steady for 12 consecutive frames (~1.5 seconds)
+                    if (stableWordCounter === 12) {
+                        if (sentenceHistory[sentenceHistory.length - 1] !== modeLabel) {
+                            sentenceHistory.push(modeLabel);
+                            historyBox.innerHTML = `<strong>${sentenceHistory.join(" ")}</strong>`;
+                            historyBox.scrollTop = historyBox.scrollHeight;
+                            speakWord(modeLabel); // Text-To-Speech read aloud
+                        }
+                    }
+                } else {
+                    lastLoggedWord = modeLabel;
+                    stableWordCounter = 0;
+                }
+
             } else {
                 predLabel.textContent = 'NO HAND';
                 predConf.textContent = 'Show hand to camera';
+                stableWordCounter = 0;
             }
 
-            // Update Progress Bars
+            // Update Breakdown Bars
             if (res.predictions) {
                 Object.entries(res.predictions).forEach(([name, val]) => {
                     const idKey = name.replace(/\s+/g, '-');

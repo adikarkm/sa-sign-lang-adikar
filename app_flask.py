@@ -86,12 +86,20 @@ def predict():
         "label": "No Hand Detected",
         "confidence": 0.0,
         "predictions": {name: 0.0 for name in CLASS_NAMES},
-        "landmarks": []
+        "landmarks": [],
+        "handedness": []
     }
 
     if results.hand_landmarks:
         live_coordinates = []
         draw_landmarks_list = []
+
+        # Get Handedness (Left/Right)
+        hands_list = []
+        if results.handedness:
+            for hand_info in results.handedness:
+                hands_list.append(hand_info[0].category_name)
+        response_data["handedness"] = hands_list
 
         for hand in results.hand_landmarks:
             hand_pts = []
