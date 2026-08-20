@@ -143,13 +143,6 @@
             background-color: #475569;
         }
 
-        .btn-warning {
-            background-color: #f59e0b;
-        }
-        .btn-warning:hover {
-            background-color: #d97706;
-        }
-
         .sidebar {
             display: flex;
             flex-direction: column;
@@ -296,7 +289,7 @@
 
         <div class="sidebar">
             <div class="card">
-                <h2>Real-Time Prediction (Smoothed)</h2>
+                <h2>Real-Time Prediction</h2>
                 <div class="prediction-box">
                     <div id="predLabel" class="prediction-label">WAITING...</div>
                     <div id="predConf" class="prediction-conf">Start camera to detect signs</div>
@@ -352,7 +345,7 @@
         let fpsTimer = performance.now();
 
         // Smoothing Queue
-        const SMOOTHING_WINDOW_SIZE = 12;
+        const SMOOTHING_WINDOW_SIZE = 8;
         let predictionHistory = [];
 
         // Initialize Probability Bars
@@ -374,6 +367,13 @@
             });
         }
         initBars();
+
+        // Auto-fit canvas when video metadata loads or plays
+        video.addEventListener('play', () => {
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            console.log(`Canvas dimensions initialized to: ${canvas.width}x${canvas.height}`);
+        });
 
         // Camera Toggle
         toggleCamBtn.addEventListener('click', async () => {
@@ -409,7 +409,7 @@
                 // Process frames every 120ms
                 frameInterval = setInterval(captureAndPredict, 120);
             } catch (err) {
-                console.error("Camera error:", err);
+                console.error("Camera access error:", err);
                 errorOverlay.style.display = 'flex';
                 stopCamera();
             }
@@ -436,12 +436,12 @@
             isProcessing = true;
 
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = video.videoWidth || 640;
-            tempCanvas.height = video.videoHeight || 480;
+            tempCanvas.width = video.videoWidth && video.videoWidth > 0 ? video.videoWidth : 640;
+            tempCanvas.height = video.videoHeight && video.videoHeight > 0 ? video.videoHeight : 480;
             const tempCtx = tempCanvas.getContext('2d');
             tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
 
-            const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.7);
+            const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.6);
 
             // FPS Calculation
             const now = performance.now();
@@ -465,7 +465,7 @@
                     updateUI(res);
                 }
             } catch (err) {
-                console.error('Prediction error:', err);
+                console.error('Prediction network request error:', err);
             } finally {
                 isProcessing = false;
             }
@@ -474,16 +474,15 @@
         function updateUI(res) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw FPS Counter Overlay in corner
-            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+            // Draw FPS Counter Overlay in top-right
+            ctx.fillStyle = "rgba(15, 23, 42, 0.7)";
             ctx.fillRect(canvas.width - 95, 10, 85, 30);
-            ctx.font = "bold 14px Arial";
+            ctx.font = "bold 13px Arial";
             ctx.fillStyle = "#10b981";
-            // Due to mirror canvas, render text appropriately or handle orientation
             ctx.save();
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
-            ctx.fillText(`FPS: ${currentFps}`, 20, 30);
+            ctx.fillText(`FPS: ${currentFps}`, 25, 30);
             ctx.restore();
 
             // Draw Landmarks (if showLandmarks is toggled ON)
@@ -494,13 +493,13 @@
                         const x = pt.x * canvas.width;
                         const y = pt.y * canvas.height;
                         ctx.beginPath();
-                        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                        ctx.arc(x, y, 4, 0, 2 * Math.PI);
                         ctx.fill();
                     });
                 });
             }
 
-            // Prediction Smoothing logic (rolling average over last 12 frames)
+            // Prediction Smoothing (Rolling History queue)
             if (res.hand_detected) {
                 predictionHistory.push({ label: res.label, confidence: res.confidence });
             } else {
@@ -511,40 +510,37 @@
                 predictionHistory.shift();
             }
 
-            // Get mode (most frequent sign in the rolling queue)
-            const frequencyMap = {};
-            predictionHistory.forEach(item => {
-                frequencyMap[item.label] = (frequencyMap[item.label] || 0) + 1;
-            });
-
-            let modeLabel = 'NO HAND';
-            let maxCount = 0;
-            Object.entries(frequencyMap).forEach(([lbl, count]) => {
-                if (count > maxCount) {
-                    maxCount = count;
-                    modeLabel = lbl;
-                }
-            });
-
-            // Consistency Threshold: mode must represent at least 65% (8/12) of recent frames
-            const isConsistent = maxCount >= (SMOOTHING_WINDOW_SIZE * 0.65);
+            // Filter only valid hand predictions to calculate consensus
+            const handPredictions = predictionHistory.filter(item => item.label !== 'NO HAND');
             
-            if (isConsistent && modeLabel !== 'NO HAND') {
-                // Calculate average confidence for the mode label in the history queue
-                const modePredictions = predictionHistory.filter(item => item.label === modeLabel);
+            if (res.hand_detected && handPredictions.length > 0) {
+                // Find mode label among recent hand detections
+                const frequencyMap = {};
+                handPredictions.forEach(item => {
+                    frequencyMap[item.label] = (frequencyMap[item.label] || 0) + 1;
+                });
+
+                let modeLabel = res.label;
+                let maxCount = 0;
+                Object.entries(frequencyMap).forEach(([lbl, count]) => {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        modeLabel = lbl;
+                    }
+                });
+
+                // Calculate average confidence for the mode label
+                const modePredictions = handPredictions.filter(item => item.label === modeLabel);
                 const avgConf = modePredictions.reduce((acc, curr) => acc + curr.confidence, 0) / modePredictions.length;
                 
                 predLabel.textContent = modeLabel.toUpperCase();
-                predConf.textContent = `Confidence (Smoothed): ${avgConf.toFixed(1)}%`;
-            } else if (modeLabel === 'NO HAND') {
+                predConf.textContent = `Confidence: ${avgConf.toFixed(1)}%`;
+            } else {
                 predLabel.textContent = 'NO HAND';
                 predConf.textContent = 'Show hand to camera';
-            } else {
-                predLabel.textContent = 'STABILIZING...';
-                predConf.textContent = 'Keep hand steady';
             }
 
-            // Update Progress Bars Confidences
+            // Update Progress Bars
             if (res.predictions) {
                 Object.entries(res.predictions).forEach(([name, val]) => {
                     const idKey = name.replace(/\s+/g, '-');
