@@ -515,7 +515,10 @@
         
         let lastLoggedWord = "";
         let stableWordCounter = 0;
+        
+        // TTS Lag Prevention Variables
         let lastSpokenWord = "";
+        let speechDebounceTimer = null;
 
         // Auto-fit canvas
         video.addEventListener('play', () => {
@@ -600,6 +603,7 @@
 
             predictionHistory = [];
             lastSpokenWord = "";
+            if (speechDebounceTimer) clearTimeout(speechDebounceTimer);
         }
 
         async function captureAndPredict() {
@@ -642,19 +646,28 @@
             }
         }
 
-        // Web Speech synthesis speak (Highly responsive, optimized without cancel bug)
+        // Web Speech synthesis speak (Instantly interrupts trailing audio + debounces flickering)
         function speakWord(word) {
             if (ttsToggle.checked && 'speechSynthesis' in window) {
                 if (word && word !== lastSpokenWord && word !== 'NO HAND' && word !== 'WAITING...' && word !== 'STABILIZING...') {
                     lastSpokenWord = word;
                     
-                    const utterance = new SpeechSynthesisUtterance(word);
-                    utterance.rate = 1.0;
-                    utterance.pitch = 1.0;
-                    utterance.lang = 'en-US';
-                    
-                    window.speechSynthesis.speak(utterance);
-                    console.log("TTS Spoke:", word);
+                    // Clear trailing queue checks and debounce rapid flickering
+                    clearTimeout(speechDebounceTimer);
+                    speechDebounceTimer = setTimeout(() => {
+                        try {
+                            window.speechSynthesis.cancel(); // Interrupt any currently playing TTS voice
+                            
+                            const utterance = new SpeechSynthesisUtterance(word);
+                            utterance.rate = 1.1; // Slightly faster speak rate for high responsiveness
+                            utterance.pitch = 1.0;
+                            utterance.lang = 'en-US';
+                            
+                            window.speechSynthesis.speak(utterance);
+                        } catch (e) {
+                            console.error("Speech Synthesis Error:", e);
+                        }
+                    }, 220); // 220ms stability buffer
                 }
             }
         }
@@ -738,7 +751,7 @@
                 predLabel.textContent = modeLabel.toUpperCase();
                 predConf.textContent = `Confidence: ${avgConf.toFixed(1)}%`;
 
-                // Trigger TTS immediately when the active predicted sign word changes!
+                // Trigger snappy, lag-free speech immediately when the detected word changes
                 speakWord(modeLabel);
 
                 // Sentence builder
@@ -760,7 +773,7 @@
                 predLabel.textContent = 'NO HAND';
                 predConf.textContent = 'Show hand to camera';
                 stableWordCounter = 0;
-                lastSpokenWord = "";
+                // DO NOT reset lastSpokenWord to empty here to avoid queueing up duplicates on hand-flickers!
             }
 
             // Update Breakdown Bars & Chips
