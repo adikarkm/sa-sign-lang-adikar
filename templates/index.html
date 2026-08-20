@@ -512,8 +512,10 @@
         const SMOOTHING_WINDOW_SIZE = 8;
         let predictionHistory = [];
         let sentenceHistory = [];
+        
         let lastLoggedWord = "";
         let stableWordCounter = 0;
+        let lastSpokenWord = "";
 
         // Auto-fit canvas
         video.addEventListener('play', () => {
@@ -541,6 +543,7 @@
             sentenceHistory = [];
             lastLoggedWord = "";
             stableWordCounter = 0;
+            lastSpokenWord = "";
             historyBox.innerHTML = '<em>Translated words will construct a sentence here...</em>';
         });
 
@@ -596,6 +599,7 @@
             handBadge.textContent = "No Hand Detected";
 
             predictionHistory = [];
+            lastSpokenWord = "";
         }
 
         async function captureAndPredict() {
@@ -638,13 +642,20 @@
             }
         }
 
-        // Web Speech synthesis speak
+        // Web Speech synthesis speak (Highly responsive, optimized without cancel bug)
         function speakWord(word) {
             if (ttsToggle.checked && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(word);
-                utterance.rate = 1.0;
-                window.speechSynthesis.speak(utterance);
+                if (word && word !== lastSpokenWord && word !== 'NO HAND' && word !== 'WAITING...' && word !== 'STABILIZING...') {
+                    lastSpokenWord = word;
+                    
+                    const utterance = new SpeechSynthesisUtterance(word);
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.0;
+                    utterance.lang = 'en-US';
+                    
+                    window.speechSynthesis.speak(utterance);
+                    console.log("TTS Spoke:", word);
+                }
             }
         }
 
@@ -727,6 +738,9 @@
                 predLabel.textContent = modeLabel.toUpperCase();
                 predConf.textContent = `Confidence: ${avgConf.toFixed(1)}%`;
 
+                // Trigger TTS immediately when the active predicted sign word changes!
+                speakWord(modeLabel);
+
                 // Sentence builder
                 if (modeLabel === lastLoggedWord) {
                     stableWordCounter++;
@@ -735,7 +749,6 @@
                             sentenceHistory.push(modeLabel);
                             historyBox.innerHTML = `<strong>${sentenceHistory.join(" ")}</strong>`;
                             historyBox.scrollTop = historyBox.scrollHeight;
-                            speakWord(modeLabel);
                         }
                     }
                 } else {
@@ -747,9 +760,10 @@
                 predLabel.textContent = 'NO HAND';
                 predConf.textContent = 'Show hand to camera';
                 stableWordCounter = 0;
+                lastSpokenWord = "";
             }
 
-            // Dynamic Progress Bars & Chips Generation
+            // Update Breakdown Bars & Chips
             if (res.predictions) {
                 const predKeys = Object.keys(res.predictions);
                 const renderedBars = probList.querySelectorAll('.prob-item');
@@ -759,7 +773,6 @@
                     chipsList.innerHTML = '';
                     
                     predKeys.forEach(name => {
-                        // Injects Progress Bar
                         const item = document.createElement('div');
                         item.className = 'prob-item';
                         item.innerHTML = `
@@ -773,7 +786,6 @@
                         `;
                         probList.appendChild(item);
 
-                        // Injects Chip
                         const chip = document.createElement('span');
                         chip.className = 'chip';
                         chip.textContent = name;
@@ -781,7 +793,6 @@
                     });
                 }
 
-                // Update Progress Bars Value
                 Object.entries(res.predictions).forEach(([name, val]) => {
                     const idKey = name.replace(/\s+/g, '-');
                     const valEl = document.getElementById(`val-${idKey}`);
