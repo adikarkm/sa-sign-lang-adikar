@@ -6,15 +6,17 @@
     <title>Sign Language Recognition - Web App</title>
     <style>
         :root {
-            --bg-color: #0b0f19;
-            --card-bg: rgba(22, 28, 45, 0.7);
-            --accent-color: #10b981;
-            --accent-glow: rgba(16, 185, 129, 0.4);
+            --bg-color: #070913;
+            --card-bg: rgba(15, 23, 42, 0.65);
+            --accent-color: #06b6d4; /* Vibrant Cyan */
+            --accent-hover: #0891b2;
+            --accent-glow: rgba(6, 182, 212, 0.35);
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --border-color: rgba(255, 255, 255, 0.08);
             --error-color: #ef4444;
-            --purple-glow: rgba(168, 85, 247, 0.4);
+            --purple-color: #a855f7; /* Nice Purple */
+            --purple-glow: rgba(168, 85, 247, 0.35);
         }
 
         * {
@@ -26,8 +28,8 @@
 
         body {
             background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
+            background-image: radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.07) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.07) 0%, transparent 40%);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
@@ -36,7 +38,7 @@
         }
 
         header {
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(10, 15, 30, 0.7);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
             padding: 1.25rem 2rem;
@@ -48,7 +50,7 @@
         header h1 {
             font-size: 1.6rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #10b981 0%, #a855f7 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--purple-color) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: flex;
@@ -58,19 +60,19 @@
 
         .badge-free {
             background-color: rgba(168, 85, 247, 0.15);
-            color: #c084fc;
+            color: #d8b4fe;
             padding: 0.35rem 0.85rem;
             border-radius: 9999px;
             font-size: 0.8rem;
             font-weight: 700;
             border: 1px solid rgba(168, 85, 247, 0.3);
-            box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.15);
         }
 
         .container {
             max-width: 1200px;
             margin: 2rem auto;
-            padding: 0 1.25rem;
+            padding: 0 1rem;
             display: grid;
             grid-template-columns: 1fr 400px;
             gap: 2rem;
@@ -92,18 +94,18 @@
             display: flex;
             flex-direction: column;
             gap: 1.25rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
         }
 
         .video-container {
             position: relative;
             width: 100%;
             aspect-ratio: 4 / 3;
-            background-color: #020617;
+            background-color: #02040a;
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-color);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.8);
         }
 
         video, canvas {
@@ -158,12 +160,14 @@
         }
 
         .btn-secondary {
-            background-color: #334155;
+            background-color: #1e293b;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
             box-shadow: none;
         }
 
         .btn-secondary:hover {
-            background-color: #475569;
+            background-color: #334155;
         }
 
         .toggle-switch {
@@ -179,12 +183,13 @@
             width: 40px;
             height: 20px;
             appearance: none;
-            background: #334155;
+            background: #1e293b;
             border-radius: 10px;
             position: relative;
             outline: none;
             cursor: pointer;
             transition: background 0.3s;
+            border: 1px solid var(--border-color);
         }
 
         .toggle-input:checked {
@@ -194,8 +199,8 @@
         .toggle-input::before {
             content: '';
             position: absolute;
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
             top: 2px;
             left: 2px;
@@ -219,7 +224,7 @@
             border-radius: 16px;
             border: 1px solid var(--border-color);
             padding: 1.5rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
         }
 
         .card h2 {
@@ -234,11 +239,11 @@
         .prediction-box {
             text-align: center;
             padding: 1.75rem;
-            background-color: rgba(15, 23, 42, 0.7);
+            background-color: rgba(10, 15, 30, 0.7);
             border-radius: 12px;
             border: 1px solid var(--border-color);
             margin-bottom: 1rem;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -248,10 +253,10 @@
         .prediction-label {
             font-size: 2.2rem;
             font-weight: 800;
-            color: var(--text-primary);
+            color: var(--accent-color);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            text-shadow: 0 0 15px var(--accent-glow);
         }
 
         .prediction-conf {
@@ -280,29 +285,29 @@
         }
 
         .badge-left {
-            background-color: rgba(56, 189, 248, 0.15);
-            color: #38bdf8;
-            border-color: rgba(56, 189, 248, 0.3);
-            box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
-        }
-
-        .badge-right {
-            background-color: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-            border-color: rgba(16, 185, 129, 0.3);
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
-        }
-
-        .badge-both {
             background-color: rgba(168, 85, 247, 0.15);
-            color: #c084fc;
+            color: #d8b4fe;
             border-color: rgba(168, 85, 247, 0.3);
             box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
         }
 
+        .badge-right {
+            background-color: rgba(6, 182, 212, 0.15);
+            color: #22d3ee;
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.2);
+        }
+
+        .badge-both {
+            background-color: rgba(236, 72, 153, 0.15);
+            color: #f472b6;
+            border-color: rgba(236, 72, 153, 0.3);
+            box-shadow: 0 0 8px rgba(236, 72, 153, 0.2);
+        }
+
         /* History log styling */
         .history-box {
-            background: rgba(15, 23, 42, 0.7);
+            background: rgba(10, 15, 30, 0.7);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 1.25rem;
@@ -314,6 +319,7 @@
             line-height: 1.6;
             margin-bottom: 1rem;
             text-align: left;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
         }
 
         .history-controls {
@@ -345,14 +351,15 @@
 
         .bar-bg {
             height: 8px;
-            background-color: #334155;
+            background-color: #1e293b;
             border-radius: 4px;
             overflow: hidden;
+            border: 1px solid var(--border-color);
         }
 
         .bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #10b981 0%, #a855f7 100%);
+            background: linear-gradient(90deg, var(--accent-color) 0%, var(--purple-color) 100%);
             width: 0%;
             transition: width 0.15s ease-out;
         }
@@ -364,7 +371,7 @@
         }
 
         .chip {
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
             padding: 0.4rem 0.8rem;
             border-radius: 6px;
@@ -378,7 +385,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(15, 23, 42, 0.9);
+            background-color: rgba(10, 15, 30, 0.95);
             display: none;
             flex-direction: column;
             align-items: center;
@@ -452,7 +459,7 @@
                 </div>
                 <div class="history-controls">
                     <button id="copyBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">📋 Copy</button>
-                    <button id="clearBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background-color: rgba(239, 68, 68, 0.15); color: #f87171;">🗑️ Clear</button>
+                    <button id="clearBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background-color: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.2);">🗑️ Clear</button>
                 </div>
             </div>
 
@@ -498,7 +505,7 @@
         const ttsToggle = document.getElementById('ttsToggle');
         const probList = document.getElementById('probList');
 
-        const CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"];
+        const CLASS_NAMES = ["african beer", "hello", "how", "how are you", "name", "no", "okay", "please", "thank you", "think", "yes"];
         let isCameraActive = false;
         let showLandmarks = true;
         let stream = null;
@@ -664,7 +671,7 @@
         // Web Speech synthesis speak
         function speakWord(word) {
             if (ttsToggle.checked && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // stop previous speech
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(word);
                 utterance.rate = 1.0;
                 window.speechSynthesis.speak(utterance);
@@ -675,19 +682,19 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Draw FPS overlay
-            ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+            ctx.fillStyle = "rgba(10, 15, 30, 0.75)";
             ctx.fillRect(canvas.width - 95, 10, 85, 30);
             ctx.font = "bold 13px Arial";
-            ctx.fillStyle = "#10b981";
+            ctx.fillStyle = "var(--accent-color)";
             ctx.save();
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
             ctx.fillText(`FPS: ${currentFps}`, 25, 30);
             ctx.restore();
 
-            // Draw landmarks
+            // Draw landmarks in Cyan
             if (res.hand_detected && showLandmarks) {
-                ctx.fillStyle = '#10b981';
+                ctx.fillStyle = 'var(--accent-color)';
                 res.landmarks.forEach(hand => {
                     hand.forEach(pt => {
                         const x = pt.x * canvas.width;
@@ -750,16 +757,15 @@
                 predLabel.textContent = modeLabel.toUpperCase();
                 predConf.textContent = `Confidence: ${avgConf.toFixed(1)}%`;
 
-                // Sentence builder log handler
+                // Sentence builder
                 if (modeLabel === lastLoggedWord) {
                     stableWordCounter++;
-                    // If a word is held steady for 12 consecutive frames (~1.5 seconds)
                     if (stableWordCounter === 12) {
                         if (sentenceHistory[sentenceHistory.length - 1] !== modeLabel) {
                             sentenceHistory.push(modeLabel);
                             historyBox.innerHTML = `<strong>${sentenceHistory.join(" ")}</strong>`;
                             historyBox.scrollTop = historyBox.scrollHeight;
-                            speakWord(modeLabel); // Text-To-Speech read aloud
+                            speakWord(modeLabel);
                         }
                     }
                 } else {
