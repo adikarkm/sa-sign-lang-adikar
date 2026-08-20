@@ -15,7 +15,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "landmark_model.keras")
 LANDMARKER_PATH = os.path.join(BASE_DIR, "hand_landmarker.task")
 
-CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think"]
+# Expanded classes list (11 classes)
+CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"]
 
 # Initialize Models
 keras_model = None

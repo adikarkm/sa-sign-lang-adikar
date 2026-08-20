@@ -13,6 +13,7 @@
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --border-color: #334155;
+            --error-color: #ef4444;
         }
 
         * {
@@ -142,6 +143,13 @@
             background-color: #475569;
         }
 
+        .btn-warning {
+            background-color: #f59e0b;
+        }
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
+
         .sidebar {
             display: flex;
             flex-direction: column;
@@ -159,7 +167,6 @@
             font-size: 1.1rem;
             margin-bottom: 1rem;
             color: var(--text-secondary);
-
         }
 
         .prediction-box {
@@ -231,6 +238,34 @@
             font-size: 0.85rem;
             color: var(--text-secondary);
         }
+
+        .error-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .error-overlay h3 {
+            color: var(--error-color);
+            font-size: 1.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .error-overlay p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 450px;
+        }
     </style>
 </head>
 <body>
@@ -244,17 +279,24 @@
             <div class="video-container">
                 <video id="video" autoplay playsinline></video>
                 <canvas id="overlayCanvas"></canvas>
+                <div id="errorOverlay" class="error-overlay">
+                    <h3>📷 Camera Access Denied</h3>
+                    <p>Browser camera permissions were denied. Please grant camera access in your browser settings and refresh the page to run the application.</p>
+                </div>
             </div>
             <div class="controls">
                 <button id="toggleCamBtn" class="btn">
                     📷 Start Camera
+                </button>
+                <button id="toggleLandmarksBtn" class="btn btn-secondary">
+                    👐 Hide Landmarks
                 </button>
             </div>
         </div>
 
         <div class="sidebar">
             <div class="card">
-                <h2>Real-Time Prediction</h2>
+                <h2>Real-Time Prediction (Smoothed)</h2>
                 <div class="prediction-box">
                     <div id="predLabel" class="prediction-label">WAITING...</div>
                     <div id="predConf" class="prediction-conf">Start camera to detect signs</div>
@@ -275,6 +317,11 @@
                     <span class="chip">how are you</span>
                     <span class="chip">okay</span>
                     <span class="chip">think</span>
+                    <span class="chip">thank you</span>
+                    <span class="chip">please</span>
+                    <span class="chip">yes</span>
+                    <span class="chip">no</span>
+                    <span class="chip">name</span>
                 </div>
             </div>
         </div>
@@ -285,15 +332,28 @@
         const canvas = document.getElementById('overlayCanvas');
         const ctx = canvas.getContext('2d');
         const toggleCamBtn = document.getElementById('toggleCamBtn');
+        const toggleLandmarksBtn = document.getElementById('toggleLandmarksBtn');
+        const errorOverlay = document.getElementById('errorOverlay');
         const predLabel = document.getElementById('predLabel');
         const predConf = document.getElementById('predConf');
         const probList = document.getElementById('probList');
 
-        const CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think"];
+        const CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"];
         let isCameraActive = false;
+        let showLandmarks = true;
         let stream = null;
         let isProcessing = false;
         let frameInterval = null;
+
+        // FPS metrics
+        let lastFrameTime = performance.now();
+        let currentFps = 0;
+        let frameCount = 0;
+        let fpsTimer = performance.now();
+
+        // Smoothing Queue
+        const SMOOTHING_WINDOW_SIZE = 12;
+        let predictionHistory = [];
 
         // Initialize Probability Bars
         function initBars() {
@@ -324,7 +384,14 @@
             }
         });
 
+        // Toggle Landmarks skeleton display
+        toggleLandmarksBtn.addEventListener('click', () => {
+            showLandmarks = !showLandmarks;
+            toggleLandmarksBtn.textContent = showLandmarks ? "👐 Hide Landmarks" : "👐 Show Landmarks";
+        });
+
         async function startCamera() {
+            errorOverlay.style.display = 'none';
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: { width: 640, height: 480, facingMode: 'user' }
@@ -339,10 +406,12 @@
                 toggleCamBtn.textContent = '⏹️ Stop Camera';
                 toggleCamBtn.classList.add('btn-secondary');
 
-                // Process frames every 150ms
-                frameInterval = setInterval(captureAndPredict, 150);
+                // Process frames every 120ms
+                frameInterval = setInterval(captureAndPredict, 120);
             } catch (err) {
-                alert('Could not access webcam: ' + err.message);
+                console.error("Camera error:", err);
+                errorOverlay.style.display = 'flex';
+                stopCamera();
             }
         }
 
@@ -359,6 +428,7 @@
             toggleCamBtn.classList.remove('btn-secondary');
             predLabel.textContent = 'STOPPED';
             predConf.textContent = 'Camera is inactive';
+            predictionHistory = [];
         }
 
         async function captureAndPredict() {
@@ -372,6 +442,16 @@
             tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
 
             const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.7);
+
+            // FPS Calculation
+            const now = performance.now();
+            frameCount++;
+            if (now - fpsTimer >= 1000) {
+                currentFps = Math.round((frameCount * 1000) / (now - fpsTimer));
+                frameCount = 0;
+                fpsTimer = now;
+            }
+            lastFrameTime = now;
 
             try {
                 const response = await fetch('/predict', {
@@ -394,11 +474,20 @@
         function updateUI(res) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (res.hand_detected) {
-                predLabel.textContent = res.label.toUpperCase();
-                predConf.textContent = `Confidence: ${res.confidence}%`;
+            // Draw FPS Counter Overlay in corner
+            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+            ctx.fillRect(canvas.width - 95, 10, 85, 30);
+            ctx.font = "bold 14px Arial";
+            ctx.fillStyle = "#10b981";
+            // Due to mirror canvas, render text appropriately or handle orientation
+            ctx.save();
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.fillText(`FPS: ${currentFps}`, 20, 30);
+            ctx.restore();
 
-                // Draw Landmarks
+            // Draw Landmarks (if showLandmarks is toggled ON)
+            if (res.hand_detected && showLandmarks) {
                 ctx.fillStyle = '#10b981';
                 res.landmarks.forEach(hand => {
                     hand.forEach(pt => {
@@ -409,12 +498,53 @@
                         ctx.fill();
                     });
                 });
-            } else {
-                predLabel.textContent = 'NO HAND';
-                predConf.textContent = 'Show hand to camera';
             }
 
-            // Update Progress Bars
+            // Prediction Smoothing logic (rolling average over last 12 frames)
+            if (res.hand_detected) {
+                predictionHistory.push({ label: res.label, confidence: res.confidence });
+            } else {
+                predictionHistory.push({ label: 'NO HAND', confidence: 0 });
+            }
+
+            if (predictionHistory.length > SMOOTHING_WINDOW_SIZE) {
+                predictionHistory.shift();
+            }
+
+            // Get mode (most frequent sign in the rolling queue)
+            const frequencyMap = {};
+            predictionHistory.forEach(item => {
+                frequencyMap[item.label] = (frequencyMap[item.label] || 0) + 1;
+            });
+
+            let modeLabel = 'NO HAND';
+            let maxCount = 0;
+            Object.entries(frequencyMap).forEach(([lbl, count]) => {
+                if (count > maxCount) {
+                    maxCount = count;
+                    modeLabel = lbl;
+                }
+            });
+
+            // Consistency Threshold: mode must represent at least 65% (8/12) of recent frames
+            const isConsistent = maxCount >= (SMOOTHING_WINDOW_SIZE * 0.65);
+            
+            if (isConsistent && modeLabel !== 'NO HAND') {
+                // Calculate average confidence for the mode label in the history queue
+                const modePredictions = predictionHistory.filter(item => item.label === modeLabel);
+                const avgConf = modePredictions.reduce((acc, curr) => acc + curr.confidence, 0) / modePredictions.length;
+                
+                predLabel.textContent = modeLabel.toUpperCase();
+                predConf.textContent = `Confidence (Smoothed): ${avgConf.toFixed(1)}%`;
+            } else if (modeLabel === 'NO HAND') {
+                predLabel.textContent = 'NO HAND';
+                predConf.textContent = 'Show hand to camera';
+            } else {
+                predLabel.textContent = 'STABILIZING...';
+                predConf.textContent = 'Keep hand steady';
+            }
+
+            // Update Progress Bars Confidences
             if (res.predictions) {
                 Object.entries(res.predictions).forEach(([name, val]) => {
                     const idKey = name.replace(/\s+/g, '-');
