@@ -466,24 +466,14 @@
             <div class="card">
                 <h2>Confidence Breakdown</h2>
                 <div class="prob-list" id="probList">
-                    <!-- Progress bars injected via JS -->
+                    <!-- Progress bars injected dynamically via JS based on model output shape -->
                 </div>
             </div>
 
             <div class="card">
                 <h2>Supported Signs</h2>
-                <div class="gesture-chips">
-                    <span class="chip">african beer</span>
-                    <span class="chip">hello</span>
-                    <span class="chip">how</span>
-                    <span class="chip">how are you</span>
-                    <span class="chip">okay</span>
-                    <span class="chip">think</span>
-                    <span class="chip">thank you</span>
-                    <span class="chip">please</span>
-                    <span class="chip">yes</span>
-                    <span class="chip">no</span>
-                    <span class="chip">name</span>
+                <div class="gesture-chips" id="chipsList">
+                    <!-- Chips list injected dynamically -->
                 </div>
             </div>
         </div>
@@ -504,8 +494,8 @@
         const copyBtn = document.getElementById('copyBtn');
         const ttsToggle = document.getElementById('ttsToggle');
         const probList = document.getElementById('probList');
+        const chipsList = document.getElementById('chipsList');
 
-        const CLASS_NAMES = ["african beer", "hello", "how", "how are you", "name", "no", "okay", "please", "thank you", "think", "yes"];
         let isCameraActive = false;
         let showLandmarks = true;
         let stream = null;
@@ -524,26 +514,6 @@
         let sentenceHistory = [];
         let lastLoggedWord = "";
         let stableWordCounter = 0;
-
-        // Initialize Probability Bars
-        function initBars() {
-            probList.innerHTML = '';
-            CLASS_NAMES.forEach(name => {
-                const item = document.createElement('div');
-                item.className = 'prob-item';
-                item.innerHTML = `
-                    <div class="prob-header">
-                        <span>${name}</span>
-                        <span id="val-${name.replace(/\s+/g, '-')}">0.0%</span>
-                    </div>
-                    <div class="bar-bg">
-                        <div class="bar-fill" id="bar-${name.replace(/\s+/g, '-')}"></div>
-                    </div>
-                `;
-                probList.appendChild(item);
-            });
-        }
-        initBars();
 
         // Auto-fit canvas
         video.addEventListener('play', () => {
@@ -692,7 +662,7 @@
             ctx.fillText(`FPS: ${currentFps}`, 25, 30);
             ctx.restore();
 
-            // Draw landmarks in Cyan
+            // Draw landmarks
             if (res.hand_detected && showLandmarks) {
                 ctx.fillStyle = 'var(--accent-color)';
                 res.landmarks.forEach(hand => {
@@ -779,8 +749,39 @@
                 stableWordCounter = 0;
             }
 
-            // Update Breakdown Bars
+            // Dynamic Progress Bars & Chips Generation
             if (res.predictions) {
+                const predKeys = Object.keys(res.predictions);
+                const renderedBars = probList.querySelectorAll('.prob-item');
+                
+                if (renderedBars.length !== predKeys.length) {
+                    probList.innerHTML = '';
+                    chipsList.innerHTML = '';
+                    
+                    predKeys.forEach(name => {
+                        // Injects Progress Bar
+                        const item = document.createElement('div');
+                        item.className = 'prob-item';
+                        item.innerHTML = `
+                            <div class="prob-header">
+                                <span>${name}</span>
+                                <span id="val-${name.replace(/\s+/g, '-')}">0.0%</span>
+                            </div>
+                            <div class="bar-bg">
+                                <div class="bar-fill" id="bar-${name.replace(/\s+/g, '-')}"></div>
+                            </div>
+                        `;
+                        probList.appendChild(item);
+
+                        // Injects Chip
+                        const chip = document.createElement('span');
+                        chip.className = 'chip';
+                        chip.textContent = name;
+                        chipsList.appendChild(chip);
+                    });
+                }
+
+                // Update Progress Bars Value
                 Object.entries(res.predictions).forEach(([name, val]) => {
                     const idKey = name.replace(/\s+/g, '-');
                     const valEl = document.getElementById(`val-${idKey}`);
