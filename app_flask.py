@@ -15,32 +15,33 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "landmark_model.keras")
 LANDMARKER_PATH = os.path.join(BASE_DIR, "hand_landmarker.task")
 
-# Alphabetically sorted classes list (must match LabelEncoder classes from train_model.py)
-CLASS_NAMES = [
-    "african beer",
-    "hello",
-    "how",
-    "how are you",
-    "name",
-    "no",
-    "okay",
-    "please",
-    "thank you",
-    "think",
-    "yes"
-]
+# Alphabetically sorted classes
+ORIGINAL_6_CLASSES = ["african beer", "hello", "how", "how are you", "okay", "think"]
+EXPANDED_11_CLASSES = ["african beer", "hello", "how", "how are you", "name", "no", "okay", "please", "thank you", "think", "yes"]
+
+# Dynamic classes list (will be set during model loading)
+CLASS_NAMES = ORIGINAL_6_CLASSES
 
 # Initialize Models
 keras_model = None
 detector = None
 
 def init_models():
-    global keras_model, detector
+    global keras_model, detector, CLASS_NAMES
     if keras_model is None:
         if not os.path.exists(MODEL_PATH):
             raise FileNotFoundError(f"Model file missing at {MODEL_PATH}")
         keras_model = tf.keras.models.load_model(MODEL_PATH)
         print("TensorFlow model loaded successfully.")
+        
+        # Dynamically inspect model output shape to prevent index out of bounds crashes
+        num_classes = keras_model.output_shape[1]
+        print(f"Model outputs detected: {num_classes}")
+        if num_classes == 11:
+            CLASS_NAMES = EXPANDED_11_CLASSES
+        else:
+            CLASS_NAMES = ORIGINAL_6_CLASSES
+        print(f"Active classes configured: {CLASS_NAMES}")
 
     if detector is None:
         if not os.path.exists(LANDMARKER_PATH):
@@ -103,9 +104,8 @@ def predict():
     }
 
     if results.hand_landmarks:
-        live_coordinates = []
-        draw_landmarks_list = []
-
+        response_data["hand_detected"] = True
+        
         # Get Handedness (Left/Right)
         hands_list = []
         if results.handedness:
@@ -113,7 +113,13 @@ def predict():
                 hands_list.append(hand_info[0].category_name)
         response_data["handedness"] = hands_list
 
-        for hand in results.hand_landmarks:
+        live_coordinates = []
+        draw_landmarks_list = []
+
+        # Safety lock: Limit to maximum of 2 hands for 126 feature dimensions
+        hands_to_process = results.hand_landmarks[:2]
+
+        for hand in hands_to_process:
             hand_pts = []
             for lm in hand:
                 hand_pts.append({"x": lm.x, "y": lm.y, "z": lm.z})
@@ -129,7 +135,10 @@ def predict():
                     lm.z - wrist_z
                 ])
 
-        if len(results.hand_landmarks) == 1:
+        response_data["landmarks"] = draw_landmarks_list
+
+        # Zero-pad for single hand detection
+        if len(hands_to_process) == 1:
             live_coordinates.extend([0] * 63)
 
         if len(live_coordinates) == 126:
@@ -140,11 +149,9 @@ def predict():
             best_idx = int(np.argmax(preds))
             best_conf = float(preds[best_idx] * 100)
 
-            response_data["hand_detected"] = True
             response_data["label"] = CLASS_NAMES[best_idx]
             response_data["confidence"] = round(best_conf, 1)
             response_data["predictions"] = {k: round(v * 100, 1) for k, v in preds_dict.items()}
-            response_data["landmarks"] = draw_landmarks_list
 
     return jsonify(response_data)
 
