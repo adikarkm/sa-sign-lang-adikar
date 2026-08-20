@@ -15,8 +15,20 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "landmark_model.keras")
 LANDMARKER_PATH = os.path.join(BASE_DIR, "hand_landmarker.task")
 
-# Expanded classes list (11 classes)
-CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"]
+# Alphabetically sorted classes list (must match LabelEncoder classes from train_model.py)
+CLASS_NAMES = [
+    "african beer",
+    "hello",
+    "how",
+    "how are you",
+    "name",
+    "no",
+    "okay",
+    "please",
+    "thank you",
+    "think",
+    "yes"
+]
 
 # Initialize Models
 keras_model = None
