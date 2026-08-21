@@ -10,8 +10,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, 'hand_landmarker.task')
 CSV_FILE = os.path.join(BASE_DIR, 'hand_landmarks.csv')
 
-# Expanded classes list
-CLASSES = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"]
+DATASET_DIR = os.path.join(BASE_DIR, 'dataset')
+if not os.path.exists(DATASET_DIR):
+    os.makedirs(DATASET_DIR)
+
+# Dynamically discover classes in the 'dataset' folder
+dynamic_classes = [d for d in os.listdir(DATASET_DIR) if os.path.isdir(os.path.join(DATASET_DIR, d))]
+
+# Legacy fallback for existing folders in the root directory
+legacy_classes = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"]
+existing_legacy = [c for c in legacy_classes if os.path.exists(os.path.join(BASE_DIR, c))]
+
+CLASSES = sorted(list(set(dynamic_classes + existing_legacy)))
 VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mov', '.mkv')
 FRAME_STRIDE = 5 
 
@@ -84,7 +94,10 @@ def collect_data():
             csv_writer.writerow(header)
 
         for class_name in CLASSES:
-            folder_path = os.path.join(BASE_DIR, class_name)
+            # Check dataset dir first, then fallback to base dir
+            folder_path = os.path.join(DATASET_DIR, class_name)
+            if not os.path.exists(folder_path):
+                folder_path = os.path.join(BASE_DIR, class_name)
             if not os.path.exists(folder_path):
                 print(f"Directory not found (Skipped) -> {folder_path}")
                 continue

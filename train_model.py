@@ -9,7 +9,15 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_FILE = os.path.join(BASE_DIR, "hand_landmarks.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "landmark_model.keras")
 
-CLASSES = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"]
+DATASET_DIR = os.path.join(BASE_DIR, 'dataset')
+if not os.path.exists(DATASET_DIR):
+    os.makedirs(DATASET_DIR)
+
+dynamic_classes = [d for d in os.listdir(DATASET_DIR) if os.path.isdir(os.path.join(DATASET_DIR, d))]
+legacy_classes = ["african beer", "hello", "how", "how are you", "okay", "think", "thank you", "please", "yes", "no", "name"]
+existing_legacy = [c for c in legacy_classes if os.path.exists(os.path.join(BASE_DIR, c))]
+
+CLASSES = sorted(list(set(dynamic_classes + existing_legacy)))
 
 def train():
     if not os.path.exists(CSV_FILE):
@@ -37,11 +45,12 @@ def train():
     # Build sequential deep neural net
     model = tf.keras.Sequential([
         tf.keras.layers.Input(shape=(126,)),
+        tf.keras.layers.Dense(256, activation='relu'),
+        tf.keras.layers.Dropout(0.3),
         tf.keras.layers.Dense(128, activation='relu'),
         tf.keras.layers.Dropout(0.3),
         tf.keras.layers.Dense(64, activation='relu'),
         tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(32, activation='relu'),
         tf.keras.layers.Dense(num_classes, activation='softmax')
     ])
 
