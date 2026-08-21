@@ -15,12 +15,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "landmark_model.keras")
 LANDMARKER_PATH = os.path.join(BASE_DIR, "hand_landmarker.task")
 
-# Alphabetically sorted classes
-ORIGINAL_6_CLASSES = ["african beer", "hello", "how", "how are you", "okay", "think"]
-EXPANDED_11_CLASSES = ["african beer", "hello", "how", "how are you", "name", "no", "okay", "please", "thank you", "think", "yes"]
-
-# Dynamic classes list (will be set during model loading)
-CLASS_NAMES = ORIGINAL_6_CLASSES
+CLASSES_JSON_PATH = os.path.join(BASE_DIR, "classes.json")
+CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think"]
 
 # Initialize Models
 keras_model = None
@@ -34,14 +30,19 @@ def init_models():
         keras_model = tf.keras.models.load_model(MODEL_PATH)
         print("TensorFlow model loaded successfully.")
         
-        # Dynamically inspect model output shape to prevent index out of bounds crashes
         num_classes = keras_model.output_shape[1]
         print(f"Model outputs detected: {num_classes}")
-        if num_classes == 11:
-            CLASS_NAMES = EXPANDED_11_CLASSES
+        
+        if os.path.exists(CLASSES_JSON_PATH):
+            import json
+            with open(CLASSES_JSON_PATH, "r") as f:
+                CLASS_NAMES = json.load(f)
+        elif num_classes == 11:
+            CLASS_NAMES = ["african beer", "hello", "how", "how are you", "name", "no", "okay", "please", "thank you", "think", "yes"]
         else:
-            CLASS_NAMES = ORIGINAL_6_CLASSES
-        print(f"Active classes configured: {CLASS_NAMES}")
+            CLASS_NAMES = ["african beer", "hello", "how", "how are you", "okay", "think"]
+            
+        print(f"Active classes configured ({len(CLASS_NAMES)}): {CLASS_NAMES}")
 
     if detector is None:
         if not os.path.exists(LANDMARKER_PATH):
